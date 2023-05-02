@@ -1,9 +1,10 @@
 class RiscV:
     
-    pc = 0x10074;
+    pc = 0x0;
     rf = [0 for k in range(32)];
-    dmem = [0 for k in range(2048)];
+    dmem = [0 for k in range(0xffffff)];
     instr_mem = [0 for k in range(0xFFFFFF)];
+    log = '';
 
     # Reference ABI list
     abi_list = ['zero','ra','sp','gp','tp','t0','t1','t2','s0','s1','a0','a1',
@@ -11,6 +12,9 @@ class RiscV:
                 's8','s9','s10','s11','t3','t4','t5','t6'];
 
     def __init__ (self, dump):
+
+        # Define log name
+        self.log_name = self.get_log_name(dump);
 
         # Parse the dump file
         with open(dump) as f:
@@ -31,7 +35,7 @@ class RiscV:
                 ref_dict.append(dict_aux.copy());
                 dict_aux['args'] = list();
             else:
-                if (line.find('<main>') > 0):
+                if (line.find('<_start>') > 0):
                     #print(line);
                     aux = line.split();
                     self.pc = int('0x' + aux[0], 16);
@@ -53,10 +57,13 @@ class RiscV:
         # Set initial SP to guide memory write/read
         self.rf[2] = 500;
 
-        while(self.pc != 0xffffffff):
+        eop = False;
+        while(not(eop)):
             #print(f'PC: {self.pc}');
             #print(self.instr_mnemonic_ref[int(self.pc/4)]);
-            self.decode_instr(self.instr_mem[int(self.pc/4)]);
+            eop = self.decode_instr(self.instr_mem[int(self.pc/4)]);
+            #if (dump == '/home/kaio/Documents/MO601/proj2/riscv_simu/test/121.loop.riscv.dump'):
+            #    print(f'PC: {self.pc}');
             #print(self.rf);
             #print(self.dmem[480:501]);
             #print();
@@ -81,10 +88,14 @@ class RiscV:
         # Flag to indicate PC change from instruction or not
         change_pc = False;
 
-        # Generate first log section
-        log_str = self.print_log(self.pc, instr, rd, rs1, rs2);
+        # Flag to signal end of program
+        eop = False;
+
+        # Log variables
+        pc_cur = self.pc;
         dasm_str = '';
         
+        #print(f'ZERO: {self.rf[0]}');
         # ISA: RV32I
         if (instr_bin[0:7] == '1100110'):
             #print("This is a R-Type");
@@ -281,14 +292,14 @@ class RiscV:
             # SH
             if (instr_bin[12:15] == '100'): 
                 addr = self.rf[rs1]+self.sign_extend(imms,12);
-                data = (self.rf[rs2] & 0x0000ffff) + (dmem[addr] & 0xffff0000);
+                data = (self.rf[rs2] & 0x0000ffff) + (self.dmem[addr] & 0xffff0000);
                 self.mem_func(0, addr, data);
                 dasm_str = self.build_dasm('sh', rd, rs1, rs2, 
                                            immi, imms, immb, immj, immu);
             # SB
-            if (instr_bin[12:15] == '100'): 
+            if (instr_bin[12:15] == '000'): 
                 addr = self.rf[rs1]+self.sign_extend(imms,12);
-                data = (self.rf[rs2] & 0x000000ff) + (dmem[addr] & 0xffffff00);
+                data = (self.rf[rs2] & 0x000000ff) + (self.dmem[addr] & 0xffffff00);
                 self.mem_func(0, addr, data);
                 dasm_str = self.build_dasm('sb', rd, rs1, rs2, 
                                            immi, imms, immb, immj, immu);
@@ -342,6 +353,8 @@ class RiscV:
                                            immi, imms, immb, immj, immu);
             # BNE
             if (instr_bin[12:15] == '100'): 
+                #print(f'RS1[{rs1}]: {self.rf[rs1]}')
+                #print(f'RS2[{rs2}]: {self.rf[rs2]}')
                 if (self.rf[rs1] != self.rf[rs2]):
                     self.pc = self.pc + self.sign_extend(immb,13);
                     change_pc = True;
@@ -407,14 +420,14 @@ class RiscV:
         # AUIPC 
         elif (instr_bin[0:7] == '1110100'):
             #print("This is a U-Type");
-            self.rf[rd] = self.pc + self.sign_extend(immu << 12);
+            self.rf[rd] = self.pc + self.sign_extend(immu << 12,32);
             dasm_str = self.build_dasm('auipc', rd, rs1, rs2, 
                                        immi, imms, immb, immj, immu);
 
         # LUI 
         elif (instr_bin[0:7] == '1110110'):
             #print("This is a U-Type");
-            self.rf[rd] = self.sign_extend(immu << 12);
+            self.rf[rd] = self.sign_extend(immu << 12,32);
             dasm_str = self.build_dasm('lui', rd, rs1, rs2, 
                                        immi, imms, immb, immj, immu);
 
@@ -425,15 +438,28 @@ class RiscV:
                                            immi, imms, immb, immj, immu);
             # ECALL
             if (instr_bin[7:] == '0000000000000100000000000'):
+                eop = True;
                 dasm_str = self.build_dasm('ebreak', rd, rs1, rs2, 
                                            immi, imms, immb, immj, immu);
 
-        #TODO: Implement ECALL and EBREAK instructions
-
+        # Natural PC sum
         if (not(change_pc)):
             self.pc = self.pc + 4;
 
-        print (f'{log_str} {dasm_str}');
+        # Force X0 to 0
+        if (self.rf[0] != 0):
+            self.rf[0] = 0;
+
+        # Generate first log section
+        log_str = self.print_log(pc_cur, instr, rd, rs1, rs2);
+
+        #print (f'{log_str} {dasm_str}');
+        self.log = self.log + f'{log_str} {dasm_str}\n';
+
+        # DEBUG
+        #a = input();
+
+        return eop;
 
         ## DBG
         #print(f'RD: {self.rf[rd]}')
@@ -471,9 +497,9 @@ class RiscV:
     def print_log (self, pc, instr, rd, rs1, rs2):
         pc_hex = hex(pc)[2:].zfill(8).upper();
         instr_hex = instr.upper();
-        rd_cont = hex(self.rf[rd])[2:].zfill(8).upper();
-        rs1_cont = hex(self.rf[rs1])[2:].zfill(8).upper();
-        rs2_cont = hex(self.rf[rs2])[2:].zfill(8).upper();
+        rd_cont = hex(self.usig_word(self.rf[rd]))[2:].zfill(8).upper();
+        rs1_cont = hex(self.usig_word(self.rf[rs1]))[2:].zfill(8).upper();
+        rs2_cont = hex(self.usig_word(self.rf[rs2]))[2:].zfill(8).upper();
 
         # Construct full string:
         log_str = f'PC={pc_hex} ';
@@ -490,6 +516,14 @@ class RiscV:
             return f'0{value}';
         else:
             return str(value);
+
+    
+    def get_log_name (self, dump_path):
+        dump_lst = dump_path.split('/');
+        file_nm = dump_lst[-1];
+        file_lst = file_nm.split('.');
+        
+        return f'{file_lst[0]}.{file_lst[1]}.log'; 
 
 
     # Build deassembly print 
