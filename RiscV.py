@@ -94,6 +94,9 @@ class RiscV:
         # Log variables
         pc_cur = self.pc;
         dasm_str = '';
+
+        rs1_old = self.rf[rs1];
+        rs2_old = self.rf[rs2];
         
         #print(f'ZERO: {self.rf[0]}');
         # ISA: RV32I
@@ -490,7 +493,7 @@ class RiscV:
             self.rf[0] = 0;
 
         # Generate first log section
-        log_str = self.print_log(pc_cur, instr, rd, rs1, rs2);
+        log_str = self.print_log(pc_cur, instr, rd, rs1, rs2, rs1_old, rs2_old);
 
         #print (f'{log_str} {dasm_str}');
         self.log = self.log + f'{log_str} {dasm_str}\n';
@@ -533,12 +536,12 @@ class RiscV:
         else:
             return value;
 
-    def print_log (self, pc, instr, rd, rs1, rs2):
+    def print_log (self, pc, instr, rd, rs1, rs2, rs1_old, rs2_old):
         pc_hex = hex(pc)[2:].zfill(8).upper();
         instr_hex = instr.upper();
         rd_cont = hex(self.usig_word(self.rf[rd]))[2:].zfill(8).upper();
-        rs1_cont = hex(self.usig_word(self.rf[rs1]))[2:].zfill(8).upper();
-        rs2_cont = hex(self.usig_word(self.rf[rs2]))[2:].zfill(8).upper();
+        rs1_cont = hex(self.usig_word(rs1_old))[2:].zfill(8).upper();
+        rs2_cont = hex(self.usig_word(rs2_old))[2:].zfill(8).upper();
 
         # Construct full string:
         log_str = f'PC={pc_hex} ';

@@ -1,5 +1,5 @@
 #!/bin/bash
-riscv64-unknown-elf-gcc -g -static -march=rv32im -std=gnu99 -mabi=ilp32 crt.S 000.main.c -o 000.main.riscv -g -march=rv32im -std=gnu99 -mabi=ilp32 -nostartfiles -nostdinc -nostdlib
+riscv64-unknown-elf-gcc -g -static -march=rv32im -std=gnu99 -mabi=ilp32 crt.S 000.main.c -o 000.main.riscv -g -march=rv32im -std=gnu99 -mabi=ilp32 -nostartfiles -nostdinc -nostdlib -T linker.ld
 riscv64-unknown-elf-gcc -g -static -march=rv32im -std=gnu99 -mabi=ilp32 crt.S 011.const.c -o 011.const.riscv -g -march=rv32im -std=gnu99 -mabi=ilp32 -nostartfiles -nostdinc -nostdlib -T linker.ld
 riscv64-unknown-elf-gcc -g -static -march=rv32im -std=gnu99 -mabi=ilp32 crt.S 012.const.c -o 012.const.riscv -g -march=rv32im -std=gnu99 -mabi=ilp32 -nostartfiles -nostdinc -nostdlib -T linker.ld
 riscv64-unknown-elf-gcc -g -static -march=rv32im -std=gnu99 -mabi=ilp32 crt.S 013.const.c -o 013.const.riscv -g -march=rv32im -std=gnu99 -mabi=ilp32 -nostartfiles -nostdinc -nostdlib -T linker.ld
