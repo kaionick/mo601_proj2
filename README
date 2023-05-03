@@ -22,7 +22,7 @@ The C programs are located at "test" directory. To generate the compile object:
 
     2. Run the compile script:
 
-        ./compile.sh
+        ./compilar.sh
 
 To verify if the script ran properly:
 
