@@ -1,0 +1,57 @@
+# ---------------------------------------------------------------------------------
+# RISC-V Simulator
+# ---------------------------------------------------------------------------------
+
+This is a project of a simple RISC-V simulator for RV32IM architecture.
+
+It takes an object dump file as an input and outputs a execution log.
+
+# ---------------------------------------------------------------------------------
+# How to use
+# ---------------------------------------------------------------------------------
+
+# ----------------------------------
+# Compile the programs
+# ----------------------------------
+
+The C programs are located at "test" directory. To generate the compile object:
+
+    1. Go to the directory
+
+        cd test
+
+    2. Run the compile script:
+
+        ./compile.sh
+
+To verify if the script ran properly:
+
+    ls *riscv
+
+You shoul see a list of all programs compiled.
+
+# ----------------------------------
+# Generate the dump
+# ----------------------------------
+
+To generate the dump, you first need to compile the programs.
+After that, you can go to (or stayin) the test directory and run:
+
+    ./dump.sh
+
+The dump files should be created in the same directory. To check:
+
+    ls *dump
+
+# ----------------------------------
+# Running the simulator
+# ----------------------------------
+
+To run the simulator, go to the repo root and execute:
+
+    python3 riscv_sim.py
+
+This command line should execute all programs and generate logs in the "logs" directory.
+It is also possible to run a specfic program by execution:
+
+    python3 riscv_sim.py -t <program>.riscv.dump

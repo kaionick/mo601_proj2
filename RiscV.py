@@ -292,14 +292,29 @@ class RiscV:
             # SH
             if (instr_bin[12:15] == '100'): 
                 addr = self.rf[rs1]+self.sign_extend(imms,12);
-                data = (self.rf[rs2] & 0x0000ffff) + (self.dmem[addr] & 0xffff0000);
+                addr_r = addr % 4;
+                if (addr_r == 0):
+                    data = (self.rf[rs2] & 0x0000ffff) + (self.dmem[int(addr/4)] & 0xffff0000);
+                else:
+                    data = ((self.rf[rs2] & 0x0000ffff) << 16) + (self.dmem[int(addr/4)] & 0x0000ffff);
                 self.mem_func(0, addr, data);
                 dasm_str = self.build_dasm('sh', rd, rs1, rs2, 
                                            immi, imms, immb, immj, immu);
             # SB
             if (instr_bin[12:15] == '000'): 
                 addr = self.rf[rs1]+self.sign_extend(imms,12);
-                data = (self.rf[rs2] & 0x000000ff) + (self.dmem[addr] & 0xffffff00);
+                addr_r = addr % 4;
+                if (addr_r == 0):
+                    data = (self.rf[rs2] & 0x000000ff) + (self.dmem[int(addr/4)] & 0xffffff00);
+                elif (addr_r == 1):
+                    data = ((self.rf[rs2] & 0x000000ff) << 8) + (self.dmem[int(addr/4)] & 0xffff00ff);
+                elif (addr_r == 2):
+                    data = ((self.rf[rs2] & 0x000000ff) << 16) + (self.dmem[int(addr/4)] & 0xff00ffff);
+                elif (addr_r == 3):
+                    data = ((self.rf[rs2] & 0x000000ff) << 24) + (self.dmem[int(addr/4)] & 0x00ffffff);
+                #print(f'ADDR: {addr}');
+                #print(f'ADDR_R: {addr_r}');
+                #print(hex(data));
                 self.mem_func(0, addr, data);
                 dasm_str = self.build_dasm('sb', rd, rs1, rs2, 
                                            immi, imms, immb, immj, immu);
@@ -309,15 +324,27 @@ class RiscV:
             # LB
             if (instr_bin[12:15] == '000'): 
                 addr = self.rf[rs1]+self.sign_extend(immi,12);
-                read_data = self.sign_extend(self.mem_func(1, addr, 0) & 0x000000ff, 8);
-                self.rf[rd] = read_data;
+                addr_r = addr % 4;
+                read_data = self.mem_func(1, addr, 0);
+                if (addr_r == 0):
+                    self.rf[rd] = self.sign_extend((read_data & 0x000000ff), 8);
+                elif (addr_r == 1):
+                    self.rf[rd] = self.sign_extend(((read_data & 0x0000ff00)>>8), 8);
+                elif (addr_r == 2):
+                    self.rf[rd] = self.sign_extend(((read_data & 0x00ff0000)>>16), 8);
+                elif (addr_r == 3):
+                    self.rf[rd] = self.sign_extend(((read_data & 0xff000000)>>24), 8);
                 dasm_str = self.build_dasm('lb', rd, rs1, rs2, 
                                            immi, imms, immb, immj, immu);
             # LH
             if (instr_bin[12:15] == '100'): 
                 addr = self.rf[rs1]+self.sign_extend(immi,12);
-                read_data = self.sign_extend(self.mem_func(1, addr, 0) & 0x0000ffff, 16);
-                self.rf[rd] = read_data;
+                addr_r = addr % 4;
+                read_data = self.mem_func(1, addr, 0);
+                if (addr_r == 0):
+                    self.rf[rd] = self.sign_extend((read_data & 0x0000ffff), 16);
+                else:
+                    self.rf[rd] = self.sign_extend(((read_data & 0xffff0000)>>16), 16);
                 dasm_str = self.build_dasm('lh', rd, rs1, rs2, 
                                            immi, imms, immb, immj, immu);
             # LW
@@ -330,15 +357,27 @@ class RiscV:
             # LBU
             if (instr_bin[12:15] == '001'): 
                 addr = self.rf[rs1]+self.sign_extend(immi,12);
-                read_data = self.mem_func(1, addr, 0) & 0x000000ff;
-                self.rf[rd] = read_data;
+                addr_r = addr % 4;
+                read_data = self.mem_func(1, addr, 0);
+                if (addr_r == 0):
+                    self.rf[rd] = (read_data & 0x000000ff);
+                elif (addr_r == 1):
+                    self.rf[rd] = ((read_data & 0x0000ff00)>>8);
+                elif (addr_r == 2):
+                    self.rf[rd] = ((read_data & 0x00ff0000)>>16);
+                elif (addr_r == 3):
+                    self.rf[rd] = ((read_data & 0xff000000)>>24);
                 dasm_str = self.build_dasm('lbu', rd, rs1, rs2, 
                                            immi, imms, immb, immj, immu);
             # LHU
             if (instr_bin[12:15] == '101'): 
                 addr = self.rf[rs1]+self.sign_extend(immi,12);
-                read_data = self.mem_func(1, addr, 0) & 0x0000ffff;
-                self.rf[rd] = read_data;
+                addr_r = addr % 4;
+                read_data = self.mem_func(1, addr, 0);
+                if (addr_r == 0):
+                    self.rf[rd] = (read_data & 0x0000ffff);
+                else:
+                    self.rf[rd] = ((read_data & 0xffff0000)>>16);
                 dasm_str = self.build_dasm('lhu', rd, rs1, rs2, 
                                            immi, imms, immb, immj, immu);
 

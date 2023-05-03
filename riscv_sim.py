@@ -41,12 +41,15 @@ if (args.test_name == 'all'):
     for obj in obj_lst:
         print(f'[INFO] Executing: {obj}');
         riscv_sim = RiscV(obj);
-        #with open(f'{exe_path}/logs/{riscv_sim.log_name}','w') as f:
-        #    f.write(riscv_sim.log);
+        with open(f'{exe_path}/logs/{riscv_sim.log_name}','w') as f:
+            f.write(riscv_sim.log);
         #pause = input();
 
 else:
 
     exe_file = f'{dump_path}/{args.test_name}';
 
+    print(f'[INFO] Executing: {exe_file}');
     riscv_sim = RiscV(exe_file);
+    with open(f'{exe_path}/logs/{riscv_sim.log_name}','w') as f:
+        f.write(riscv_sim.log);
